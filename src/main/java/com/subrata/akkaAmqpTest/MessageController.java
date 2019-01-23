@@ -1,4 +1,4 @@
-package com.soumith.akkaAmqpTest;
+package com.subrata.akkaAmqpTest;
 
 import java.io.IOException;
 import java.nio.file.Files;

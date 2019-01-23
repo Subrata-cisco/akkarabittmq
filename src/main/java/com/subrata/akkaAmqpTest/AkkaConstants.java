@@ -1,4 +1,4 @@
-package com.soumith.akkaAmqpTest;
+package com.subrata.akkaAmqpTest;
 
 public class AkkaConstants {
 	

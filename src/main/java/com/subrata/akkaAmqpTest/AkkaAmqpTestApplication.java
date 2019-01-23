@@ -1,4 +1,4 @@
-package com.soumith.akkaAmqpTest;
+package com.subrata.akkaAmqpTest;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
