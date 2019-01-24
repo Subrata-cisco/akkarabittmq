@@ -35,8 +35,11 @@ public class AkkaConfiguration {
 	public AmqpConnectionProvider connectionProvider() {
 		   AmqpDetailsConnectionProvider connectionProvider =
 			        AmqpDetailsConnectionProvider.create("invalid", 5673)
-			            .withHostsAndPorts(
-			                Arrays.asList(Pair.create("localhost", 5672), Pair.create("localhost", 5674)));
+			            .withHostsAndPorts(Arrays.asList(Pair.create("localhost", 5672), Pair.create("localhost", 5674)))
+			            .withConnectionName("subratarconn")
+			            .withAutomaticRecoveryEnabled(true);
+			            
+			            
 	
 	return connectionProvider;
 	}
