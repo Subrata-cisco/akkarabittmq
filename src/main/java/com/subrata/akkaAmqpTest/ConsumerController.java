@@ -1,6 +1,5 @@
 package com.subrata.akkaAmqpTest;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -12,16 +11,17 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.batch.BatchProperties.Job;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import akka.NotUsed;
 import akka.stream.ActorMaterializer;
+import akka.stream.OverflowStrategy;
 import akka.stream.alpakka.amqp.AmqpConnectionProvider;
 import akka.stream.alpakka.amqp.IncomingMessage;
 import akka.stream.alpakka.amqp.NamedQueueSourceSettings;
@@ -86,11 +86,45 @@ public class ConsumerController {
 	    	totalMesgReceived++;
 	    }
 	    
+	    try {
+			Thread.sleep(5000L);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	    
 	    return new ResponseEntity<>("Total message received :"+totalMesgReceived, HttpStatus.OK);
 	}
 	
 	@PostMapping("/stop")
 	public void stopConsumingMessage() {
+		
+		 final Source<Job, NotUsed> inboundJobsConnector = Source.empty();
+		    //#explicit-buffers-backpressure
+		    // Getting a stream of jobs from an imaginary external system as a Source
+		    final Source<Job, NotUsed> jobs = inboundJobsConnector;
+		    jobs.buffer(1000, OverflowStrategy.backpressure());
+		    //#explicit-buffers-backpressure
+
+		    //#explicit-buffers-droptail
+		    jobs.buffer(1000, OverflowStrategy.dropTail());
+		    //#explicit-buffers-droptail
+
+		    //#explicit-buffers-dropnew
+		    jobs.buffer(1000, OverflowStrategy.dropNew());
+		    //#explicit-buffers-dropnew
+
+		    //#explicit-buffers-drophead
+		    jobs.buffer(1000, OverflowStrategy.dropHead());
+		    //#explicit-buffers-drophead
+
+		    //#explicit-buffers-dropbuffer
+		    jobs.buffer(1000, OverflowStrategy.dropBuffer());
+		    //#explicit-buffers-dropbuffer
+
+		    //#explicit-buffers-fail
+		    jobs.buffer(1000, OverflowStrategy.fail());
+		    //#explicit-buffers-fail
 		
 	}
 

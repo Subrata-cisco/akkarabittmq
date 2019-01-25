@@ -15,11 +15,9 @@ import akka.stream.alpakka.amqp.QueueDeclaration;
 @Configuration
 public class AkkaConfiguration {
 	
-	
 	@Bean
 	public ActorMaterializer materializer() {
 		ActorSystem actorSystem = ActorSystem.create("actor-system");
-		
 		ActorMaterializer materializer = ActorMaterializer.create(actorSystem);
 		return materializer;
 	}
@@ -33,15 +31,10 @@ public class AkkaConfiguration {
 	
 	@Bean
 	public AmqpConnectionProvider connectionProvider() {
-		   AmqpDetailsConnectionProvider connectionProvider =
-			        AmqpDetailsConnectionProvider.create("invalid", 5673)
-			            .withHostsAndPorts(Arrays.asList(Pair.create("localhost", 5672), Pair.create("localhost", 5674)))
-			            .withConnectionName("subratarconn")
-			            .withAutomaticRecoveryEnabled(true);
-			            
-			            
-	
-	return connectionProvider;
+		AmqpDetailsConnectionProvider connectionProvider = AmqpDetailsConnectionProvider.create("invalid", 5673)
+				.withHostsAndPorts(Arrays.asList(Pair.create("localhost", 5672), Pair.create("localhost", 5674)))
+				.withConnectionName("subratarconn").withAutomaticRecoveryEnabled(true);
+		return connectionProvider;
 	}
 
 }

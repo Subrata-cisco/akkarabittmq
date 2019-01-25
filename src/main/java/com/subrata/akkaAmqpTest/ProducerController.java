@@ -1,5 +1,7 @@
 package com.subrata.akkaAmqpTest;
 
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -16,10 +18,15 @@ import org.springframework.web.bind.annotation.RestController;
 
 import akka.Done;
 import akka.stream.ActorMaterializer;
+import akka.stream.IOResult;
+import akka.stream.OverflowStrategy;
 import akka.stream.alpakka.amqp.AmqpConnectionProvider;
 import akka.stream.alpakka.amqp.AmqpSinkSettings;
 import akka.stream.alpakka.amqp.QueueDeclaration;
 import akka.stream.alpakka.amqp.javadsl.AmqpSink;
+import akka.stream.javadsl.FileIO;
+import akka.stream.javadsl.Flow;
+import akka.stream.javadsl.Keep;
 import akka.stream.javadsl.Sink;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
@@ -55,35 +62,47 @@ public class ProducerController {
 		String message = "Hi this message is hardcoded in code... But can be passed as parameter as well....";
 	    List<String> contents = new ArrayList<>();
 	    contents.add(message);
+	    
 	    for(int i=0;i<itNo;i++) {
 	    	try {
-	    		/*CompletionStage<ByteString> completion = */ 
-	    		  Source.from(contents)
+	    		/*CompletionStage<Done> promise = */ Source.from(contents)
+	    		        .buffer(10, OverflowStrategy.backpressure())
 	    				.map(ByteString::fromString)
 	    				.runWith(amqpSink, materializer);
 	    				/*.handle((s, ex) -> { 
-	    					if(s != null) {
-	    					  System.out.println("********** s1 : "+s.getClass().getName()+" ex :"+ex);
+	    					if(ex instanceof IOException) {
+	    						System.out.println("ProducerController.produceStartMessage()"+ex.getMessage());
 	    					}
+	    					System.out.println("********** s1 : "+s+" ex :"+ex);
 	    					return null;
 	    				 })
 						.exceptionally(th -> {
 							System.out.println("********** s2 : "+th);
 							return null;
 						})
+						
 						.whenComplete((s, ex) -> {
 							System.out.println("********** s3 : "+s+" ex :"+ex);
 							if(s != null) {
 								System.out.println("************** Message delivery failed....");
 							}
 						});*/
+	    		  
+	    		  
+	    		  //System.out.println("ProducerController.produceStartMessage()");
 	    		
 	    	} catch(Exception ex) {
 	    		System.out.println("*********** Exception .... ProducerController.produceStartMessage()");
 	    	}
 	    }
 	    System.out.println("****************** ProducerController.produceStartMessage() Total message sent :"+itNo);
-	    return new ResponseEntity<>("Total message sent :"+itNo, HttpStatus.OK);
+	    return new ResponseEntity<>("Total message sent requested :"+itNo, HttpStatus.OK);
 	}
+	
+	public Sink<String, CompletionStage<IOResult>> lineSink(String filename) {
+		  return Flow.of(String.class)
+		    .map(s -> ByteString.fromString(s.toString() + "\n"))
+		    .toMat(FileIO.toPath(Paths.get(filename)), Keep.right());
+		}
 
 }
