@@ -1,11 +1,11 @@
 package com.subrata.akkaAmqpTest;
 
-import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -45,6 +45,9 @@ public class ProducerController {
 	@Qualifier("materializer")
 	private ActorMaterializer materializer;
 	
+	@Autowired
+	private ProducerGate pg;
+	
 	@PostMapping(path="/start/{t}") 
 	public ResponseEntity<String> produceStartMessage(@PathVariable("t") Optional<Integer>  times) {
 		System.out.println("*************** ProducerController.produceStartMessage()");
@@ -56,6 +59,7 @@ public class ProducerController {
 		final Sink<ByteString, CompletionStage<Done>> amqpSink =
 		        AmqpSink.createSimple(
 		            AmqpSinkSettings.create(connectionProvider)
+		            //.
 		                .withRoutingKey(AkkaConstants.queueName)
 		                .withDeclaration(queueDeclaration));
 		
@@ -63,12 +67,28 @@ public class ProducerController {
 	    List<String> contents = new ArrayList<>();
 	    contents.add(message);
 	    
-	    for(int i=0;i<itNo;i++) {
+	    
+	    	
+	    int mc = 0;
+	    
+	while(pg.isOpen()) {
 	    	try {
-	    		/*CompletionStage<Done> promise = */ Source.from(contents)
-	    		        .buffer(10, OverflowStrategy.backpressure())
+	    		CompletionStage<Done> result =  Source.from(contents)
+	    		        .buffer(1, OverflowStrategy.backpressure())
 	    				.map(ByteString::fromString)
 	    				.runWith(amqpSink, materializer);
+	    		mc++;
+	    		System.out.println("***** Message no :"+mc+" initiated.....");
+	    		
+	    		Thread.sleep(10);
+	    		
+	    		/*try {
+	    		      result.toCompletableFuture().get();
+	    		    } catch (ExecutionException e) {
+	    		    	System.out.println("ERRORROOR  ProducerController.produceStartMessage()"+e.getMessage());
+	    		      //throw e.getCause();
+	    		    }*/
+	    		
 	    				/*.handle((s, ex) -> { 
 	    					if(ex instanceof IOException) {
 	    						System.out.println("ProducerController.produceStartMessage()"+ex.getMessage());
@@ -87,16 +107,14 @@ public class ProducerController {
 								System.out.println("************** Message delivery failed....");
 							}
 						});*/
-	    		  
-	    		  
 	    		  //System.out.println("ProducerController.produceStartMessage()");
 	    		
 	    	} catch(Exception ex) {
 	    		System.out.println("*********** Exception .... ProducerController.produceStartMessage()");
 	    	}
 	    }
-	    System.out.println("****************** ProducerController.produceStartMessage() Total message sent :"+itNo);
-	    return new ResponseEntity<>("Total message sent requested :"+itNo, HttpStatus.OK);
+	    System.out.println("****************** ProducerController.produceStartMessage() Total message sent :"+mc);
+	    return new ResponseEntity<>("Total message sent requested :"+mc, HttpStatus.OK);
 	}
 	
 	public Sink<String, CompletionStage<IOResult>> lineSink(String filename) {
@@ -104,5 +122,17 @@ public class ProducerController {
 		    .map(s -> ByteString.fromString(s.toString() + "\n"))
 		    .toMat(FileIO.toPath(Paths.get(filename)), Keep.right());
 		}
+	
+	@PostMapping(path="/gate/{t}") 
+	public ResponseEntity<String> changeGate(@PathVariable("t") Integer  status) {
+		if(status == 1) {
+			pg.openGate();
+		}else {
+			pg.closeGate();
+		}
+		 
+		return new ResponseEntity<>("GateStatus changed to :"+pg.isOpen(), HttpStatus.OK);
+		
+	}
 
 }
