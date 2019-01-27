@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -32,6 +33,9 @@ import akka.stream.alpakka.amqp.QueueDeclaration;
 
 @Configuration
 public class AkkaConfiguration {
+	
+	@Autowired
+	private ProducerGate pg;
 	
 	@Bean
 	public ActorMaterializer materializer() {
@@ -112,7 +116,8 @@ public class AkkaConfiguration {
 					@Override
 					public void handleBlockedListenerException(Connection connection, Throwable exception) {
 						System.out.println(
-								"AkkaConfiguration.handleBlockedListenerException()");
+								"******************** AkkaConfiguration.handleBlockedListenerException()");
+						pg.closeGate();
 					}
 					
 					@Override
