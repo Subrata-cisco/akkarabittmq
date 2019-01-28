@@ -48,14 +48,9 @@ public class ProducerController {
 	@Autowired
 	private ProducerGate pg;
 	
-	@PostMapping(path="/start/{t}") 
-	public ResponseEntity<String> produceStartMessage(@PathVariable("t") Optional<Integer>  times) {
+	@PostMapping(path="/start") 
+	public ResponseEntity<String> produceStartMessage() {
 		System.out.println("*************** ProducerController.produceStartMessage()");
-		int itNo = 1;
-		if(times.isPresent()) {
-			itNo = times.get();
-		}
-		
 		final Sink<ByteString, CompletionStage<Done>> amqpSink =
 		        AmqpSink.createSimple(
 		            AmqpSinkSettings.create(connectionProvider)
@@ -74,7 +69,7 @@ public class ProducerController {
 	while(pg.isOpen()) {
 	    	try {
 	    		CompletionStage<Done> result =  Source.from(contents)
-	    		        .buffer(1, OverflowStrategy.backpressure())
+	    		        .buffer(10, OverflowStrategy.backpressure())
 	    				.map(ByteString::fromString)
 	    				.runWith(amqpSink, materializer);
 	    		mc++;
