@@ -60,11 +60,14 @@ public class ConsumerController {
 	            bufferSize);
 	    System.out.println("************* Reading from queue is prepared... is empty ? : "+amqpSource.empty());
 	    
-	   
+	    int i = 0;
+	    
+	    while(i< totalC) {
+	    	i++;
 	    // #run-source
 	    final CompletionStage<List<IncomingMessage>> result =
-	        amqpSource.take(totalC).runWith(Sink.seq(), materializer);
-	    System.out.println("************* Strating reading from queue....");
+	        amqpSource.take(1).runWith(Sink.seq(), materializer);
+	    //System.out.println("************* Strating reading from queue....");
 	   
 
 	    List<String> collect = new ArrayList<String>();
@@ -80,20 +83,28 @@ public class ConsumerController {
 			e.printStackTrace();
 		}
 		
-		int totalMesgReceived = 0;
-	    for (String s:collect) {    	
-	    	System.out.println(s);
-	    	totalMesgReceived++;
+	    for (String s:collect) { 
+	    	if(s.contains("$$$$$")) {
+	    		System.out.println("************************************************************************************************");
+	    		return new ResponseEntity<>("Back pressure effect :"+s, HttpStatus.OK);
+	    	}
+	    	System.out.println("Message: Received ["+i+"]:"+s);
+	    	
 	    }
 	    
-	    try {
-			Thread.sleep(5000L);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+			/*try {
+				Thread.sleep(1);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}*/
 	    
-	    return new ResponseEntity<>("Total message received :"+totalMesgReceived, HttpStatus.OK);
+	    
+	    }
+	    
+	    
+	    
+	    return new ResponseEntity<>("Total message received :"+i, HttpStatus.OK);
 	}
 	
 	@PostMapping("/stop")

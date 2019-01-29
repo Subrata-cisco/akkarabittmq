@@ -58,7 +58,7 @@ public class ProducerController {
 		                .withRoutingKey(AkkaConstants.queueName)
 		                .withDeclaration(queueDeclaration));
 		
-		String message = "Hi this message is hardcoded in code... But can be passed as parameter as well....";
+		String message = "Hi this message is hardcoded in code...";
 	    List<String> contents = new ArrayList<>();
 	    contents.add(message);
 	    
@@ -69,7 +69,8 @@ public class ProducerController {
 	while(pg.isOpen()) {
 	    	try {
 	    		CompletionStage<Done> result =  Source.from(contents)
-	    		        .buffer(10, OverflowStrategy.backpressure())
+	    		        //.buffer(10, OverflowStrategy.backpressure())
+	    		        .conflate((s1,s2) -> s1+"$$$$$"+s2 )
 	    				.map(ByteString::fromString)
 	    				.runWith(amqpSink, materializer);
 	    		mc++;
