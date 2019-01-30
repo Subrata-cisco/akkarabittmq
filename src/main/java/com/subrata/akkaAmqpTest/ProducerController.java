@@ -1,11 +1,10 @@
 package com.subrata.akkaAmqpTest;
 
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -68,11 +67,23 @@ public class ProducerController {
 	    
 	while(pg.isOpen()) {
 	    	try {
-	    		CompletionStage<Done> result =  Source.from(contents)
+	    		
+	    		
+	    		Flow flow = Flow.of(String.class).buffer(10, OverflowStrategy.backpressure());
+	    		
+	    		/*CompletionStage<Done> result =*/  Source.from(contents)
+	    				//.throttle(elements, per)
 	    		        //.buffer(10, OverflowStrategy.backpressure())
-	    		        .conflate((s1,s2) -> s1+"$$$$$"+s2 )
+	    				//.throttle(3, 1, 1, ThrottleMode.Shaping)
+	    				//.throttle(1, Duration.ofSeconds(1))
+	    		        //.conflate((s1,s2) -> s1+"$$$$$"+s2 )
+	    		        .throttle(3, Duration.ofSeconds(1))
 	    				.map(ByteString::fromString)
-	    				.runWith(amqpSink, materializer);
+	    				.via(flow)
+	    				.runWith(amqpSink, materializer); 
+	    		
+	    		
+	    		
 	    		mc++;
 	    		System.out.println("***** Message no :"+mc+" initiated.....");
 	    		
